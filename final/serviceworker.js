@@ -4,12 +4,21 @@ const VERSION = "v2",
       SVG_SLOW = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500"><path fill="#d3d3d3" fill-rule="evenodd" d="M0 0h500v500H0z"/><g font-family="SegoeUI, Segoe UI" font-size="33" style="isolation:isolate"><text style="isolation:isolate" transform="translate(105.6 243.2)">Data saver active,</text><text style="isolation:isolate" transform="translate(104.2 284.2)">media not loaded</text></g></svg>';
 
 var slow_connection = false,
-    save_data = false;
+    save_data = false,
+    last_tested = null;
 
-if ( 'connection' in navigator ) {
-  slow_connection = ( navigator.connection.downlink < 0.5 );
-  save_data = navigator.connection.saveData;
-  console.log( "slow?", slow_connection, "save data?", save_data );
+function testConnection() {
+  // only test every minute
+  if ( last_tested && Date.now() < last_tested + ( 60 * 1000 ) )
+  {
+    return;
+  }
+  if ( 'connection' in navigator ) {
+    slow_connection = ( navigator.connection.downlink < 0.5 );
+    save_data = navigator.connection.saveData;
+    console.log( "Currently slow?", slow_connection, "Currently wanting to save data?", save_data );
+    last_tested = Date.now();
+  }
 }
 
 function cacheResponse( response, event ) {
@@ -63,6 +72,8 @@ self.addEventListener( "activate", event => {
 });
 
 self.addEventListener( "fetch", function( event ){
+
+  testConnection();
 
   let request = event.request,
       url = request.url;
